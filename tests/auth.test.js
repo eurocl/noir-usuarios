@@ -1,0 +1,33 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import User from '../src/models/User.js';
+import { createUsersApp } from '../src/app.js';
+
+test('registro, login, perfil y rechazo de credenciales incorrectas', async t => {
+  process.env.JWT_SECRET = 'test-only-secret';
+  let saved;
+  t.mock.method(User, 'findOne', async ({ email }) => saved?.email === email ? saved : null);
+  t.mock.method(User, 'create', async data => (saved = { ...data, _id: '507f1f77bcf86cd799439012' }));
+  t.mock.method(User, 'findById', async id => saved?._id === id ? saved : null);
+  const server = createUsersApp().listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const post = (route, body) => fetch(base + route, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const account = {name:'Test',email:'test@example.invalid',password:'Test123!'};
+  const created = await post('/users/register', account);
+  assert.equal(created.status, 201);
+  assert.notEqual(saved.password, account.password);
+  assert.equal(Object.hasOwn((await created.json()).user,'password'), false);
+  assert.equal((await post('/users/register', account)).status,409);
+  assert.equal((await post('/users/login', {email:account.email,password:'wrong'})).status,401);
+  const login = await post('/users/login', account);
+  assert.equal(login.status,200);
+  const body=await login.json();
+  assert.equal(Object.hasOwn(body.user,'password'),false);
+  const profile=await fetch(base+'/users/me',{headers:{Authorization:'Bearer '+body.token}});
+  assert.equal(profile.status,200);
+  assert.equal((await profile.json()).email,account.email);
+  assert.equal((await fetch(base+'/users/me')).status,401);
+});
