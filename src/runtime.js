@@ -41,8 +41,10 @@ export async function startApi(app, { name, port, uri, dbName, dependencies = []
     const stop = () => server.close(async () => { await mongoose.disconnect(); });
     process.once("SIGTERM", stop);
     process.once("SIGINT", stop);
-  } catch {
+  } catch (error) {
     console.error(`${name}: no se pudo iniciar. Revisá la conexión MongoDB y las variables requeridas.`);
+    console.error(JSON.stringify({ error: error.name, code: error.code, cause: error.cause?.code,
+      servers: [...(error.reason?.servers?.values() || [])].map(server => ({ type: server.type, error: server.error?.name, code: server.error?.code, cause: server.error?.cause?.code })) }));
     await mongoose.disconnect();
     process.exitCode = 1;
   }
