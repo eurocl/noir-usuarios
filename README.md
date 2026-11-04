@@ -13,7 +13,13 @@ Repositorio exclusivo: https://github.com/eurocl/noir-usuarios. Servicio de Rend
 - POST /users/login: recibe email y password. Devuelve un JWT y los datos públicos del usuario, o 401 si las credenciales no son válidas.
 - GET /users/me: requiere Authorization: Bearer TOKEN. Nunca devuelve el hash de la contraseña.
 
-Las pruebas de  No escriben en una base real.
+## Permisos
+
+El registro público siempre crea clientes (`customer`), aunque se envíe otro rol. Las cuentas anteriores sin rol también se consideran clientes. El login incluye `role` en el JWT firmado y en los datos públicos.
+
+Para cambiar el rol de una cuenta existente, un operador con acceso al entorno del servicio ejecuta `node scripts/set-role.js correo@example.com admin`. Para quitarlo, usa `customer` en lugar de `admin`. No existe una ruta pública para cambiar roles.
+
+Después del cambio hay que volver a iniciar sesión. Los tokens ya emitidos conservan su permiso hasta vencer, como máximo una hora. Cambiar el rol no revoca esos tokens inmediatamente.
 
 ## Arranque
 

@@ -16,7 +16,7 @@ export function createUsersApp() {
     }
     try {
       if (await User.findOne({ email })) return res.status(409).json({ message: "Ya existe una cuenta con ese correo electrónico" });
-      const user = await User.create({ name, email, password: await bcrypt.hash(password, 10) });
+      const user = await User.create({ name, email, password: await bcrypt.hash(password, 10), role: "customer" });
       res.status(201).json({ user: { id: user._id, name: user.name, email: user.email } });
     } catch (error) {
       res.status(error.code === 11000 ? 409 : 500).json({ message: "No se pudo crear la cuenta. Intentá nuevamente." });
@@ -28,8 +28,9 @@ export function createUsersApp() {
     try {
       const user = await User.findOne({ email });
       if (!user || !await bcrypt.compare(password, user.password)) return res.status(401).json({ message: "Correo o contraseña incorrectos" });
-      const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1h" });
-      res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+      const role = user.role === "admin" ? "admin" : "customer";
+      const token = jwt.sign({ userId: user._id, email: user.email, role }, process.env.JWT_SECRET, { expiresIn: "1h" });
+      res.json({ token, user: { id: user._id, name: user.name, email: user.email, role } });
     } catch {
       res.status(500).json({ message: "No se pudo iniciar sesión. Intentá nuevamente." });
     }
@@ -38,7 +39,7 @@ export function createUsersApp() {
     try {
       const user = await User.findById(req.user.userId);
       if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
-      res.json({ id: user._id, name: user.name, email: user.email });
+      res.json({ id: user._id, name: user.name, email: user.email, role: user.role === "admin" ? "admin" : "customer" });
     } catch {
       res.status(500).json({ message: "No se pudo consultar el usuario" });
     }
