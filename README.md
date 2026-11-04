@@ -13,7 +13,7 @@ Repositorio exclusivo: https://github.com/eurocl/noir-usuarios. Servicio de Rend
 - POST /users/login: recibe email y password. Devuelve un JWT y los datos públicos del usuario, o 401 si las credenciales no son válidas.
 - GET /users/me: requiere Authorization: Bearer TOKEN. Nunca devuelve el hash de la contraseña.
 
-Las pruebas de npm test cubren registro, hash de contraseñas, login, perfil, autenticación e independencia de la configuración. No escriben en una base real.
+Las pruebas de  No escriben en una base real.
 
 ## Arranque
 
